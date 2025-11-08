@@ -13,7 +13,10 @@ class Text_Editor:
         self.tail.prev = self.head
         self.build(text)
         self.cursor = self.tail.prev
-        self.command_to_handler = {"left": self._handle_command_left}
+        self.command_to_handler = {
+            "left": self._handle_command_left,
+            "right": self._handle_command_right,
+        }
 
     def build(self, text):
         for character in reversed(text):
@@ -51,7 +54,7 @@ class Text_Editor:
 
     def execute_command(self, user_input: str):
         command, args = self.parse_input(user_input)
-        mapped_handler = self.command_to_function.get(command, None)
+        mapped_handler = self.command_to_handler.get(command, None)
         if mapped_handler:
             mapped_handler(args)
         else:
@@ -89,6 +92,38 @@ class Text_Editor:
             # switch position with cursor node and left node
             self.cursor.next = left
             left.prev = self.cursor
+
+    def _handle_command_right(self, args: list[str] | None):
+        if not args:
+            self._move_cursor_right()
+
+        elif len(args) > 1:
+            print(f"Please insert one argument: {args=}")
+
+        else:
+            if args[0].isnumeric():
+                self._move_cursor_right(int(args[0]))
+
+            else:
+                print(f"Not numeric argument {args=}")
+
+    def _move_cursor_right(self, times: int = 1):
+        for _ in range(times):
+            right = self.cursor.next
+            if right is self.tail:
+                break
+
+            # connect cursor node with right.next node
+            self.cursor.next = right.next
+            right.next.prev = self.cursor
+
+            # connect right node with cursor.prev node
+            right.prev = self.cursor.prev
+            self.cursor.prev.next = right
+
+            # switch position with cursor node and right node
+            self.cursor.prev = right
+            right.next = self.cursor
 
 
 def main():
