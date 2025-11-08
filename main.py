@@ -49,6 +49,15 @@ def main():
 
     print(text_editor.get_text())
 
+    while True:
+        user_input = input(
+            "Command (insert character, delete, right times, left times, undo, quit): "
+        )
+        if user_input == "quit":
+            break
+
+        text_editor.execute_command(user_input)
+
 
 if __name__ == "__main__":
     main()
