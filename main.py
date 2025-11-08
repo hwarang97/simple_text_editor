@@ -16,7 +16,8 @@ class Text_Editor:
         self.command_to_handler = {
             "left": self._handle_command_left,
             "right": self._handle_command_right,
-            "insert": self._handle_insert,
+            "insert": self._handle_command_insert,
+            "delete": self._handle_command_delete,
         }
 
     def build(self, text):
@@ -126,7 +127,7 @@ class Text_Editor:
             self.cursor.prev = right
             right.next = self.cursor
 
-    def _handle_command_insert(self, args: list[str] | None):
+    def _handle_command_insert(self, args: list[str]):
         if not args:
             self._insert_character()
             self._move_cursor_right()
@@ -150,6 +151,18 @@ class Text_Editor:
 
         new_node.prev = self.cursor
         new_node.next.prev = new_node
+
+    def _handle_command_delete(self, args: list):
+        if args:
+            print(f"Invalide arguments for delete. {args=}")
+        else:
+            self._delete()
+
+    def _delete(self):
+        left = self.cursor.prev
+        if left is not self.head:
+            self.cursor.prev = left.prev
+            left.prev.next = self.cursor
 
 
 def main():
