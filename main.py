@@ -126,7 +126,7 @@ class Text_Editor:
             self.cursor.prev = right
             right.next = self.cursor
 
-    def _handle_insert(self, args: list[str] | None):
+    def _handle_command_insert(self, args: list[str] | None):
         if not args:
             self._insert_character()
             self._move_cursor_right()
