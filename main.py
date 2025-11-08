@@ -13,6 +13,7 @@ class Text_Editor:
         self.tail.prev = self.head
         self.build(text)
         self.cursor = self.tail.prev
+        self.command_to_handler = {"left": self._handle_command_left}
 
     def build(self, text):
         for character in reversed(text):
@@ -41,6 +42,53 @@ class Text_Editor:
             text += curr_node.value
             curr_node = curr_node.next
         return text
+
+    def parse_input(self, user_input) -> list[str, list]:
+        command_parts = user_input.split(" ")
+        command = command_parts[0]
+        command_args = command_parts[1:]
+        return command, command_args
+
+    def execute_command(self, user_input: str):
+        command, args = self.parse_input(user_input)
+        mapped_handler = self.command_to_function.get(command, None)
+        if mapped_handler:
+            mapped_handler(args)
+        else:
+            print(f"Invalid command: {user_input=}")
+        print(self.get_text())
+
+    def _handle_command_left(self, args: list[str] | None):
+        if not args:
+            self._move_cursor_left()
+
+        elif len(args) > 1:
+            print(f"Please insert one argument: {args=}")
+
+        else:
+            if args[0].isnumeric():
+                self._move_cursor_left(int(args[0]))
+
+            else:
+                print(f"Not numeric argument {args=}")
+
+    def _move_cursor_left(self, times: int = 1):
+        for _ in range(times):
+            left = self.cursor.prev
+            if left is self.head:
+                break
+
+            # connect cursor node with left.prev node
+            self.cursor.prev = left.prev
+            left.prev.next = self.cursor
+
+            # connect left node with cursor.next node
+            left.next = self.cursor.next
+            self.cursor.next.prev = left
+
+            # switch position with cursor node and left node
+            self.cursor.next = left
+            left.prev = self.cursor
 
 
 def main():
