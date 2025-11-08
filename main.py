@@ -16,6 +16,7 @@ class Text_Editor:
         self.command_to_handler = {
             "left": self._handle_command_left,
             "right": self._handle_command_right,
+            "insert": self._handle_insert,
         }
 
     def build(self, text):
@@ -124,6 +125,31 @@ class Text_Editor:
             # switch position with cursor node and right node
             self.cursor.prev = right
             right.next = self.cursor
+
+    def _handle_insert(self, args: list[str] | None):
+        if not args:
+            self._insert_character()
+            self._move_cursor_right()
+
+        elif len(args) > 2:
+            print(f"Please Please insert one argument: {args=}")
+
+        else:
+            ch = args[0]
+            if ch:
+                self._insert_character(ch)
+            else:
+                self._insert_character()
+            self._move_cursor_right()
+
+    def _insert_character(self, ch: str = " "):
+        new_node = Node(value=ch)
+
+        new_node.next = self.cursor.next
+        self.cursor.next = new_node
+
+        new_node.prev = self.cursor
+        new_node.next.prev = new_node
 
 
 def main():
