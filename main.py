@@ -18,7 +18,9 @@ class Text_Editor:
             "right": self._handle_command_right,
             "insert": self._handle_command_insert,
             "delete": self._handle_command_delete,
+            "undo": self._handle_command_undo,
         }
+        self.undo_stack: list[function, str] = []
 
     def build(self, text):
         for character in reversed(text):
@@ -61,23 +63,29 @@ class Text_Editor:
             mapped_handler(args)
         else:
             print(f"Invalid command: {user_input=}")
-        print(self.get_text())
+        print(self.get_text())  # TODO: 출력은 메인 로직에서 담당하기
 
     def _handle_command_left(self, args: list[str] | None):
         if not args:
-            self._move_cursor_left()
+            before_right = self.cursor.next
+            self._move_cursor_left(1)
+            if before_right is not self.cursor.next:
+                self.undo_stack.append((self._move_cursor_right, [1]))
 
         elif len(args) > 1:
             print(f"Please insert one argument: {args=}")
 
         else:
-            if args[0].isnumeric():
-                self._move_cursor_left(int(args[0]))
-
+            times = args[0]
+            if times.isnumeric():
+                before_right = self.cursor.next
+                self._move_cursor_left(int(times))
+                if before_right is not self.cursor.next:
+                    self.undo_stack.append((self._move_cursor_right, [int(times)]))
             else:
                 print(f"Not numeric argument {args=}")
 
-    def _move_cursor_left(self, times: int = 1):
+    def _move_cursor_left(self, times: int):
         for _ in range(times):
             left = self.cursor.prev
             if left is self.head:
@@ -97,19 +105,24 @@ class Text_Editor:
 
     def _handle_command_right(self, args: list[str] | None):
         if not args:
-            self._move_cursor_right()
-
+            before_right = self.cursor.next
+            self._move_cursor_right(1)
+            if before_right is not self.cursor.next:
+                self.undo_stack.append((self._move_cursor_left, [1]))
         elif len(args) > 1:
             print(f"Please insert one argument: {args=}")
 
         else:
-            if args[0].isnumeric():
-                self._move_cursor_right(int(args[0]))
-
+            times = args[0]
+            if times.isnumeric():
+                before_right = self.cursor.next
+                self._move_cursor_right(int(times))
+                if before_right is not self.cursor.next:
+                    self.undo_stack.append((self._move_cursor_left, [int(times)]))
             else:
                 print(f"Not numeric argument {args=}")
 
-    def _move_cursor_right(self, times: int = 1):
+    def _move_cursor_right(self, times: int):
         for _ in range(times):
             right = self.cursor.next
             if right is self.tail:
@@ -129,8 +142,9 @@ class Text_Editor:
 
     def _handle_command_insert(self, args: list[str]):
         if not args:
-            self._insert_character()
-            self._move_cursor_right()
+            self._insert_character(" ")
+            self._move_cursor_right(1)
+            self.undo_stack.append((self._delete, []))
 
         elif len(args) > 2:
             print(f"Please Please insert one argument: {args=}")
@@ -139,11 +153,13 @@ class Text_Editor:
             ch = args[0]
             if ch:
                 self._insert_character(ch)
+                self.undo_stack.append((self._delete, []))
             else:
-                self._insert_character()
-            self._move_cursor_right()
+                self._insert_character(" ")
+                self.undo_stack.append((self._delete, []))
+            self._move_cursor_right(1)
 
-    def _insert_character(self, ch: str = " "):
+    def _insert_character(self, ch: str):
         new_node = Node(value=ch)
 
         new_node.next = self.cursor.next
@@ -156,13 +172,26 @@ class Text_Editor:
         if args:
             print(f"Invalide arguments for delete. {args=}")
         else:
+            node_to_be_deleted = self.cursor.prev
             self._delete()
+            self.undo_stack.append(
+                (self._handle_command_insert, [node_to_be_deleted.value])
+            )
 
     def _delete(self):
         left = self.cursor.prev
         if left is not self.head:
             self.cursor.prev = left.prev
             left.prev.next = self.cursor
+
+    def _handle_command_undo(self, args: list):
+        if args:
+            print(f"Invalide arguments for undo. {args=}")
+        elif not self.undo_stack:
+            print(f"None work is done")
+        else:
+            reverse_function, args = self.undo_stack.pop()
+            reverse_function(*args)
 
 
 def main():
